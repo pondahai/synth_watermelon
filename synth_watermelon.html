@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>合成大西瓜</title>
+  <style>
+    canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const gravity = 0.1;
+    const restitution = 0.7;
+    const fruitTypes = ['草莓', '柳丁', '苹果', '梨', '柠檬', '西瓜'];
+    const fruitColors = {
+      '草莓': '#FF99CC', 
+      '柳丁': '#FFA07A', 
+      '苹果': '#FF9900', 
+      '梨': '#C9E4CA', 
+      '柠檬': '#FFFF00', 
+      '西瓜': '#FF69B4' 
+    };
+    const fruitRadius = {
+      '草莓': 10*3,
+      '柳丁': 15*3,
+      '苹果': 20*3,
+      '梨': 25*3,
+      '柠檬': 30*3,
+      '西瓜': 40*3
+    };
+    const fruitSpeed = 2;
+
+    class Fruit {
+      constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.radius = fruitRadius[type];
+        this.speedX = Math.random() * fruitSpeed * (Math.random() > 0.5 ? 1 : -1);
+        this.speedY = Math.random() * fruitSpeed * (Math.random() > 0.5 ? 1 : -1);
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.speedY += gravity;
+
+        if (this.y + this.radius > canvas.height) {
+          this.y = canvas.height - this.radius;
+          this.speedY = -this.speedY * restitution;
+        }
+
+        if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
+          this.speedX = -this.speedX;
+        }
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = fruitColors[this.type];
+        ctx.fill();
+        ctx.fillStyle = 'black';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '14px Arial';
+        ctx.fillText(this.type, this.x, this.y);
+      }
+    }
+
+    const fruits = [];
+    let merging = [];
+
+    canvas.addEventListener('click', (e) => {
+      const x = e.clientX - canvas.offsetLeft;
+      const y = e.clientY - canvas.offsetTop;
+      const type = fruitTypes[Math.floor(Math.random() * (fruitTypes.length - 1))];
+      fruits.push(new Fruit(x, y, type));
+    });
+
+    function update() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < fruits.length; i++) {
+        fruits[i].update();
+        fruits[i].draw();
+
+        for (let j = i + 1; j < fruits.length; j++) {
+          const distance = Math.sqrt((fruits[i].x - fruits[j].x) ** 2 + (fruits[i].y - fruits[j].y) ** 2);
+          if (distance < fruits[i].radius + fruits[j].radius) {
+            if (fruits[i].type === fruits[j].type) {
+              // 合成
+              const newX = (fruits[i].x + fruits[j].x) / 2;
+              const newY = (fruits[i].y + fruits[j].y) / 2;
+              const newType = fruitTypes[Math.min(fruitTypes.indexOf(fruits[i].type) + 1, fruitTypes.length - 1)];
+              merging.push({x: fruits[i].x, y: fruits[i].y, type: fruits[i].type, targetX: newX, targetY: newY});
+              merging.push({x: fruits[j].x, y: fruits[j].y, type: fruits[j].type, targetX: newX, targetY: newY, mergeType: newType});
+              fruits.splice(j, 1);
+              fruits.splice(i, 1);
+              i--;
+              break;
+            } else {
+              // 碰撞
+              const normalX = (fruits[j].x - fruits[i].x) / distance;
+              const normalY = (fruits[j].y - fruits[i].y) / distance;
+              const tangentX = -normalY;
+              const tangentY = normalX;
+
+              const v1n = fruits[i].speedX * normalX + fruits[i].speedY * normalY;
+              const v1t = fruits[i].speedX * tangentX + fruits[i].speedY * tangentY;
+              const v2n = fruits[j].speedX * normalX + fruits[j].speedY * normalY;
+              const v2t = fruits[j].speedX * tangentX + fruits[j].speedY * tangentY;
+
+              fruits[i].speedX = v1t * tangentX + (v2n * restitution) * normalX;
+              fruits[i].speedY = v1t * tangentY + (v2n * restitution) * normalY;
+              fruits[j].speedX = v2t * tangentX + (v1n * restitution) * normalX;
+              fruits[j].speedY = v2t * tangentY + (v1n * restitution) * normalY;
+
+              // 防止沾黏
+              const overlap = (fruits[i].radius + fruits[j].radius) - distance;
+              if (overlap > 0) {
+                fruits[i].x -= normalX * overlap / 2;
+                fruits[i].y -= normalY * overlap / 2;
+                fruits[j].x += normalX * overlap / 2;
+                fruits[j].y += normalY * overlap / 2;
+              }
+            }
+          }
+        }
+      }
+
+      // 合成動畫
+      for (let i = merging.length - 1; i >= 0; i--) {
+        const merge = merging[i];
+        const distance = Math.sqrt((merge.x - merge.targetX) ** 2 + (merge.y - merge.targetY) ** 2);
+        if (distance > 5) {
+          const dx = merge.targetX - merge.x;
+          const dy = merge.targetY - merge.y;
+          const angle = Math.atan2(dy, dx);
+          merge.x += Math.cos(angle) * 5;
+          merge.y += Math.sin(angle) * 5;
+        } else {
+          if (merge.mergeType) {
+            fruits.push(new Fruit(merge.targetX, merge.targetY, merge.mergeType));
+          }
+          merging.splice(i, 1);
+        }
+        ctx.beginPath();
+        ctx.arc(merge.x, merge.y, fruitRadius[merge.type], 0, Math.PI * 2);
+        ctx.fillStyle = fruitColors[merge.type];
+        ctx.fill();
+        ctx.fillStyle = 'black';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '14px Arial';
+        ctx.fillText(merge.type, merge.x, merge.y);
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    update();
+  </script>
+</body>
+</html>
