@@ -10,13 +10,14 @@
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const gravity = 0.1;
-    const restitution = 0.7;
-    const fruitTypes = ['草莓', '柳丁', '苹果', '梨', '柠檬', '西瓜'];
+    const restitution = 0.3; // Lowered restitution for less bounce
+    const fruitTypes = ['草莓', '柳丁', '苹果', '梨', '柠檬']; // Initial fruit types excluding "西瓜"
+    const finalFruitType = '西瓜'; // Final fruit type after merging
     const fruitColors = {
       '草莓': '#FF99CC', 
       '柳丁': '#FFA07A', 
@@ -26,14 +27,14 @@
       '西瓜': '#FF69B4' 
     };
     const fruitRadius = {
-      '草莓': 10*3,
-      '柳丁': 15*3,
-      '苹果': 20*3,
-      '梨': 25*3,
-      '柠檬': 30*3,
-      '西瓜': 40*3
+      '草莓': 10*3, // Doubled radius
+      '柳丁': 15*3, // Doubled radius
+      '苹果': 20*3, // Doubled radius
+      '梨': 25*3, // Doubled radius
+      '柠檬': 30*3, // Doubled radius
+      '西瓜': 40*3  // Doubled radius
     };
-    const fruitSpeed = 2;
+    const fruitSpeed = 4; // Increased fruit speed
 
     class Fruit {
       constructor(x, y, type) {
@@ -43,20 +44,26 @@
         this.radius = fruitRadius[type];
         this.speedX = Math.random() * fruitSpeed * (Math.random() > 0.5 ? 1 : -1);
         this.speedY = Math.random() * fruitSpeed * (Math.random() > 0.5 ? 1 : -1);
+        this.falling = false;
       }
 
       update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        this.speedY += gravity;
+        if (this.falling) {
+          this.y += this.speedY;
+          this.speedY += gravity;
 
-        if (this.y + this.radius > canvas.height) {
-          this.y = canvas.height - this.radius;
-          this.speedY = -this.speedY * restitution;
-        }
+          if (this.y + this.radius > canvas.height) {
+            this.y = canvas.height - this.radius;
+            this.speedY = -this.speedY * restitution;
+          }
 
-        if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
-          this.speedX = -this.speedX;
+          if (this.x + this.radius > canvas.width) {
+            this.x = canvas.width - this.radius;
+            this.speedX = -this.speedX * restitution;
+          } else if (this.x - this.radius < 0) {
+            this.x = this.radius;
+            this.speedX = -this.speedX * restitution;
+          }
         }
       }
 
@@ -75,16 +82,40 @@
 
     const fruits = [];
     let merging = [];
+    let currentFruit = null;
 
-    canvas.addEventListener('click', (e) => {
-      const x = e.clientX - canvas.offsetLeft;
-      const y = e.clientY - canvas.offsetTop;
-      const type = fruitTypes[Math.floor(Math.random() * (fruitTypes.length - 1))];
-      fruits.push(new Fruit(x, y, type));
+    canvas.addEventListener('mousemove', (e) => {
+      if (currentFruit) {
+        currentFruit.x = e.clientX - canvas.offsetLeft;
+        currentFruit.y = 50; // Keep the fruit at the top of the canvas
+      }
+    });
+
+    canvas.addEventListener('mouseenter', () => {
+      if (!currentFruit) {
+        const type = fruitTypes[Math.floor(Math.random() * fruitTypes.length)];
+        currentFruit = new Fruit(canvas.width / 2, 50, type);
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      currentFruit = null;
+    });
+
+    canvas.addEventListener('click', () => {
+      if (currentFruit) {
+        currentFruit.falling = true;
+        fruits.push(currentFruit);
+        currentFruit = null;
+      }
     });
 
     function update() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (currentFruit) {
+        currentFruit.draw();
+      }
 
       for (let i = 0; i < fruits.length; i++) {
         fruits[i].update();
@@ -97,9 +128,10 @@
               // 合成
               const newX = (fruits[i].x + fruits[j].x) / 2;
               const newY = (fruits[i].y + fruits[j].y) / 2;
-              const newType = fruitTypes[Math.min(fruitTypes.indexOf(fruits[i].type) + 1, fruitTypes.length - 1)];
-              merging.push({x: fruits[i].x, y: fruits[i].y, type: fruits[i].type, targetX: newX, targetY: newY});
-              merging.push({x: fruits[j].x, y: fruits[j].y, type: fruits[j].type, targetX: newX, targetY: newY, mergeType: newType});
+              const currentIndex = fruitTypes.indexOf(fruits[i].type);
+              const newType = currentIndex < fruitTypes.length - 1 ? fruitTypes[currentIndex + 1] : finalFruitType;
+              merging.push({x: fruits[i].x, y: fruits[i].y, type: fruits[i].type, targetX: newX, targetY: newY, speedX: fruits[i].speedX, speedY: fruits[i].speedY});
+              merging.push({x: fruits[j].x, y: fruits[j].y, type: fruits[j].type, targetX: newX, targetY: newY, speedX: fruits[j].speedX, speedY: fruits[j].speedY, mergeType: newType});
               fruits.splice(j, 1);
               fruits.splice(i, 1);
               i--;
@@ -142,11 +174,15 @@
           const dx = merge.targetX - merge.x;
           const dy = merge.targetY - merge.y;
           const angle = Math.atan2(dy, dx);
-          merge.x += Math.cos(angle) * 5;
-          merge.y += Math.sin(angle) * 5;
+          merge.x += Math.cos(angle) * 10; // Increased speed towards target
+          merge.y += Math.sin(angle) * 10; // Increased speed towards target
         } else {
           if (merge.mergeType) {
-            fruits.push(new Fruit(merge.targetX, merge.targetY, merge.mergeType));
+            const newFruit = new Fruit(merge.targetX, merge.targetY, merge.mergeType);
+            newFruit.speedX = (merge.speedX + (merge.speedX !== undefined ? merge.speedX : 0)) / 2;
+            newFruit.speedY = (merge.speedY + (merge.speedY !== undefined ? merge.speedY : 0)) / 2;
+            newFruit.falling = true;
+            fruits.push(newFruit);
           }
           merging.splice(i, 1);
         }
