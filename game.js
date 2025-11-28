@@ -27,6 +27,8 @@ const TEST_MODE = false; // If true, fruits spawn sequentially for debugging
 const WALL_THICKNESS = 50;
 const DANGER_LINE_Y = 100; // Distance from top where game over checks happen
 
+const ALPHA_THRESHOLD = 150;
+
 // Game State
 let score = 0;
 let currentFruitIndex = 0;
@@ -453,7 +455,7 @@ function generateEmojiVertices(emoji, radius) {
 
     // Helper to check if pixel is solid
     // Increased threshold to ignore shadows/glow which skew the PCA
-    const threshold = 150;
+    const threshold = ALPHA_THRESHOLD;
     const isSolid = (x, y) => {
         if (x < 0 || x >= width || y < 0 || y >= height) return false;
         return data[(y * width + x) * 4 + 3] > threshold;
@@ -604,7 +606,7 @@ function calculateEmojiMetrics(emoji, radius) {
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const alpha = data[(y * width + x) * 4 + 3];
-            if (alpha > 150) {
+            if (alpha > ALPHA_THRESHOLD) {
                 const val = 1; // Treat as binary mask
                 m00 += val;
                 m10 += x * val;
@@ -700,7 +702,7 @@ function calculateEmojiMetrics(emoji, radius) {
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const alpha = data[(y * width + x) * 4 + 3];
-                if (alpha > 150) { // Match the calculation threshold
+                if (alpha > ALPHA_THRESHOLD) { // Match the calculation threshold
                     dCtx.fillRect(x, y, 1, 1);
                 }
             }
