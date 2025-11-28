@@ -20,6 +20,8 @@ const FRUITS = [
     { label: '西瓜', radius: 100, color: '#32CD32', emoji: '🍉', score: 20 },
 ];
 
+const USE_POLYGON_SHAPES = false; // Set to true for polygon shapes, false for circles
+
 const WALL_THICKNESS = 50;
 const DANGER_LINE_Y = 100; // Distance from top where game over checks happen
 
@@ -91,7 +93,7 @@ function createCurrentFruit() {
 
     // Use pre-calculated vertices if available, otherwise fallback to circle
     let body;
-    if (fruitConfig.vertices && fruitConfig.vertices.length > 0) {
+    if (USE_POLYGON_SHAPES && fruitConfig.vertices && fruitConfig.vertices.length > 0) {
         body = Bodies.fromVertices(
             gameArea.clientWidth / 2,
             50,
@@ -239,7 +241,7 @@ function handleCollisions(event) {
                 const newConfig = FRUITS[newIndex];
 
                 let newBody;
-                if (newConfig.vertices && newConfig.vertices.length > 0) {
+                if (USE_POLYGON_SHAPES && newConfig.vertices && newConfig.vertices.length > 0) {
                     newBody = Bodies.fromVertices(
                         newX,
                         newY,
@@ -326,9 +328,12 @@ function endGame() {
 
 // Start Game
 // Pre-calculate vertices for all fruits
-FRUITS.forEach(fruit => {
-    fruit.vertices = generateEmojiVertices(fruit.emoji, fruit.radius);
-});
+// Pre-calculate vertices for all fruits if using polygons
+if (USE_POLYGON_SHAPES) {
+    FRUITS.forEach(fruit => {
+        fruit.vertices = generateEmojiVertices(fruit.emoji, fruit.radius);
+    });
+}
 
 createCurrentFruit();
 nextFruitIndex = Math.floor(Math.random() * 3);

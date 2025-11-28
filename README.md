@@ -37,5 +37,13 @@
 *   **JavaScript (ES6+)**：遊戲核心邏輯。
 *   **Matter.js**：強大的 2D 物理引擎，處理碰撞、重力與運動。
 
+## ⚙️ 進階設定
+
+您可以在 `game.js` 檔案開頭找到以下設定變數來調整遊戲體驗：
+
+*   `USE_POLYGON_SHAPES` (預設: `false`)：
+    *   `false`：使用圓形碰撞體，物理運算較快，滾動較平滑。
+    *   `true`：使用多邊形碰撞體（依照 Emoji 形狀），物理效果更真實但運算量較大。
+
 ---
 *Created with ❤️ by Pondahai & Antigravity*
