@@ -646,8 +646,8 @@ function calculateEmojiMetrics(emoji, radius) {
     // Semi-axes lengths (approximation for uniform ellipse)
     // For a uniform ellipse, lambda = a^2 / 4
     // So a = 2 * sqrt(lambda)
-    const a = 2 * Math.sqrt(lambda1);
-    const b = 2 * Math.sqrt(lambda2);
+    const a = 2 * Math.sqrt(lambda1) * .9;
+    const b = 2 * Math.sqrt(lambda2) * .9;
 
     // Scale factors relative to the base radius
     // We want the final semi-axes to be a and b
