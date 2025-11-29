@@ -38,7 +38,13 @@ let canDrop = true;
 let lastMergeTime = 0;
 
 // Setup Matter JS
-const engine = Engine.create();
+const engine = Engine.create({
+    gravity: {
+        x: 0,
+        y: 2,  // 默认值，增大会加快下落，减小会减慢下落
+        scale: 0.001  // 重力缩放系数
+    }
+});
 const world = engine.world;
 
 // Get DOM elements
