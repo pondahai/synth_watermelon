@@ -234,10 +234,11 @@ function handleCollisions(event) {
             const index = parseInt(bodyA.label);
 
             // If not the last fruit
+            const now = Date.now();
+            if (now - lastMergeTime < 100) continue;
+
+            // If not the last fruit: Merge
             if (index < FRUITS.length - 1) {
-                const now = Date.now();
-                // Prevent double merging in same frame - increased cooldown
-                if (now - lastMergeTime < 100) continue;
                 lastMergeTime = now;
 
                 // Mark these bodies as merged
@@ -288,6 +289,20 @@ function handleCollisions(event) {
 
                 // Update Score
                 score += newConfig.score;
+                scoreElement.textContent = score;
+
+            } else if (index === FRUITS.length - 1) {
+                // Watermelon Clear Logic
+                lastMergeTime = now;
+                mergedBodies.add(bodyA.id);
+                mergedBodies.add(bodyB.id);
+
+                const parentA = bodyA.parent === bodyA ? bodyA : bodyA.parent;
+                const parentB = bodyB.parent === bodyB ? bodyB : bodyB.parent;
+
+                World.remove(world, [parentA, parentB]);
+
+                score += 100; // Bonus for clearing
                 scoreElement.textContent = score;
             }
         }
