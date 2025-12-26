@@ -195,28 +195,11 @@ gameArea.addEventListener('click', (e) => {
     setTimeout(() => {
         if (TEST_MODE) {
             // Sequential spawn for testing
-            // We use currentFruitIndex (which was just dropped) to determine the next one
-            // But actually we want to cycle through ALL fruits, not just small ones
-            // Let's use a global counter or just increment from the last dropped one
-            // The user wants to see "every emoji fruit appear in order"
-            // The 'nextFruitIndex' variable tracks what's coming next.
-            // So we just increment it.
+            currentFruitIndex = nextFruitIndex;
             nextFruitIndex = (nextFruitIndex + 1) % FRUITS.length;
         } else {
             currentFruitIndex = nextFruitIndex;
             nextFruitIndex = Math.floor(Math.random() * 3); // Only small fruits spawn
-        }
-
-        // Update current to what was next
-        currentFruitIndex = nextFruitIndex;
-
-        // If in test mode, we might want to pre-set the *next* next one to be +1
-        // But the logic above is a bit mixed. 
-        // Standard logic: current becomes what next was. Next becomes random.
-        // Test logic: current becomes what next was. Next becomes current + 1.
-
-        if (TEST_MODE) {
-            nextFruitIndex = (currentFruitIndex + 1) % FRUITS.length;
         }
 
         nextFruitElement.textContent = FRUITS[nextFruitIndex].emoji;
